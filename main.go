@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type User struct {
@@ -28,6 +29,25 @@ type Post struct {
 }
 
 var client *mongo.Client
+func Pagination(request *http.Request, FindOptions *options.FindOptions) (int64, int64) {
+	if request.URL.Query().Get("page") != "" && request.URL.Query().Get("limit") != "" {
+		page, _ := strconv.ParseInt(request.URL.Query().Get("page"), 10, 32)
+		limit, _ := strconv.ParseInt(request.URL.Query().Get("limit"), 10, 32)
+		if page == 1 {
+			FindOptions.SetSkip(0)
+			FindOptions.SetLimit(limit)
+			return page, limit
+		}
+
+		FindOptions.SetSkip((page - 1) * limit)
+		FindOptions.SetLimit(limit)
+		return page, limit
+
+	}
+	FindOptions.SetSkip(0)
+	FindOptions.SetLimit(0)
+	return 0, 0
+}
 
 func CreateUser(response http.ResponseWriter, request *http.Request) {
 
